@@ -13,7 +13,8 @@ from .views import (
     invalidacion_dte_view,
     obtener_numero_control_ajax,
     obtener_receptor,
-    generar_documento_ajuste_view
+    generar_documento_ajuste_view, 
+    obtener_listado_productos_view
 )
 
 
@@ -63,4 +64,18 @@ urlpatterns = [
     path('emisor/new/', EmisorCreateView.as_view(), name='emisor_create'),
     path('emisor/<int:pk>/edit/', EmisorUpdateView.as_view(), name='emisor_update'),
     path('emisor/<int:pk>/delete/', EmisorDeleteView.as_view(), name='emisor_delete'),
+    
+    #LISTADO DE PRODUCTOS
+    path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
+    
+    #Contingencia
+    path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
+    path('contingencia-dte/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
+    path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
+    path('finalizar-contingencias/', views.finalizar_contigencia_view, name='finalizar_contigencia'),
+    
+    #Lotes
+    path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
+    path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
+    path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
 ]
