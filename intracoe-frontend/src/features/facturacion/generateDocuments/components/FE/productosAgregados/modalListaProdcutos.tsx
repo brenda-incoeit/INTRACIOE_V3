@@ -3,62 +3,90 @@ import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
-import { InputText } from 'primereact/inputtext';
-import { useState } from 'react';
-import { productosData } from './productosData';
-
-interface Product {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  precio_unitario: string;
-  cantidad: string;
-  no_grabado: boolean;
-  seleccionar: boolean;
-}
+import { useEffect, useState } from 'react';
+import {
+  InputNumber,
+  InputNumberValueChangeEvent,
+} from 'primereact/inputnumber';
+import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton';
+import { ProductosTabla } from './productosData';
 
 interface ModalListProductsInterface {
-  visible: any;
-  setVisible: any;
+  visible: boolean;
+  setVisible: (v: boolean) => void;
+  listProducts: ProductosTabla[];
+  selectedProducts: ProductosTabla[];
+  setSelectedProducts: (ps: ProductosTabla[]) => void;
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   visible,
   setVisible,
+  listProducts,
+  selectedProducts,
+  setSelectedProducts,
 }) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  // Solo un estado: la lista completa con sus flags
+  const [products, setProducts] = useState<
+    (ProductosTabla & { seleccionar: boolean; cantidad: number })[]
+  >([]);
 
-  // Función para manejar cambios en la cantidad
-  const handleCantidadChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    const updatedProducts = [...products];
-    updatedProducts[index].cantidad = e.target.value;
-    setProducts(updatedProducts);
+  useEffect(() => {
+    const merged = listProducts.map((prod) => {
+      const sel = selectedProducts.find((p) => p.id === prod.id);
+      return {
+        ...prod,
+        seleccionar: Boolean(sel),
+        cantidad: sel?.cantidad ?? 1,
+      };
+    });
+    setProducts(merged);
+  }, [listProducts, selectedProducts]);
+
+  // Marca/desmarca
+  const onSelectChange = (e: CheckboxChangeEvent, id: number) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, seleccionar: e.checked ?? false } : p
+      )
+    );
   };
 
-  // Función para manejar la selección de productos
-  // Función para manejar la selección de productos
-  const handleSelectChange = (
-    e: CheckboxChangeEvent, // Cambiar el tipo del evento a CheckboxChangeEvent
-    index: number
-  ) => {
-    const updatedProducts = [...products];
-    updatedProducts[index].seleccionar = e.checked ?? false; // Actualizar solo el valor de "seleccionar"
-    setProducts(updatedProducts);
-
-    // Filtramos los productos seleccionados (con seleccionar === true)
-    const selected = updatedProducts.filter((product) => product.seleccionar);
-    setSelectedProducts(selected); // Guardamos los productos seleccionados en la variable
+  // Cambia cantidad
+  const onCantidadChange = (e: InputNumberValueChangeEvent, id: number) => {
+    const nueva = e.value ?? 1;
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, cantidad: nueva } : p))
+    );
   };
 
-  const footerContent = (
-    <div>
-      <button onClick={() => setVisible(false)} autoFocus>
-        Close
-      </button>
+  const guardar = () => {
+    const seleccionados = products.filter((p) => p.seleccionar); // solo seleccionados
+
+    seleccionados.forEach((producto) => {
+      const total_neto = producto.precio_venta * producto.cantidad;
+      const total_iva = producto.cantidad * (producto.precio_venta * 0.13);
+      producto.total_neto = total_neto;
+      producto.total_iva = total_iva;
+      producto.total_con_iva = producto.preunitario;
+    });
+
+    setSelectedProducts(seleccionados);
+    setVisible(false);
+  };
+
+  const footer = (
+    <div className="flex justify-end gap-2">
+      <SendFormButton
+        onClick={guardar}
+        text="Agregar"
+        className="bg-primary-blue px-10 text-white"
+      />
+      <SendFormButton
+        onClick={() => setVisible(false)}
+        text="Cerrar"
+        className="border-primary-blue border px-10"
+      />
     </div>
   );
 
@@ -68,13 +96,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
       modal
       header={
         <>
-          <h1 className="text-start text-2xl font-bold">
-            Seleccionar productos
-          </h1>
-          <Divider className="m-0 p-0"></Divider>
+          <h1 className="text-2xl font-bold">Seleccionar productos</h1>
+          <Divider className="m-0 p-0" />
         </>
       }
-      footer={footerContent}
+      footer={footer}
       style={{ width: '80%' }}
       onHide={() => setVisible(false)}
     >
@@ -86,30 +112,30 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         rowsPerPageOptions={[5, 10, 25, 50]}
       >
         <Column
-          body={(rowData: Product, { rowIndex }: any) => (
+          header="SELECCIONAR"
+          body={(row: any) => (
             <Checkbox
-              checked={rowData.seleccionar} // Usa el estado de "seleccionar"
-              onChange={(e) => handleSelectChange(e, rowIndex)} // Maneja el cambio solo para "seleccionar"
+              checked={row.seleccionar}
+              onChange={(e) => onSelectChange(e, row.id)}
             />
           )}
-          header={<p className="text-sm">SELECCIONAR</p>}
         />
         <Column
-          body={(rowData: Product) => <p>{rowData.descripcion}</p>}
-          header={<p className="text-sm">PRODUCTOS</p>}
+          header="PRODUCTO"
+          body={(row: any) => <span>{row.descripcion}</span>}
         />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.precio_unitario}</p>}
-          header={<p className="text-sm">PRECIO UNITARIO</p>}
+          header="PRECIO UNITARIO"
+          body={(row: any) => <span>{row.preunitario}</span>}
         />
         <Column
-          header={<p className="text-sm">CANTIDAD</p>}
-          body={(rowData: Product, { rowIndex }: any) => (
-            <InputText
-              type="number"
-              value={rowData.cantidad} // 'cantidad' es un string
-              onChange={(e) => handleCantidadChange(e, rowIndex)}
+          header="CANTIDAD"
+          body={(row: any) => (
+            <InputNumber
+              value={row.cantidad}
+              onValueChange={(e) => onCantidadChange(e, row.id)}
               className="w-[5rem]"
+              min={1}
             />
           )}
         />

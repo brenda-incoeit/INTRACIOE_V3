@@ -5,23 +5,19 @@ interface Item {
   value: number;
 }
 
-
-interface SelectCondicionOperacionProps{
-  condicionDeOperacion:any,
-  setCondicionDeOperacion:any
+interface SelectCondicionOperacionProps {
+  selectedCondicionDeOperacion: any;
+  setSelectedCondicionDeOperacion: any;
+  condicionesOperacionList: any;
 }
 
-export const SelectCondicionOperacion:React.FC<SelectCondicionOperacionProps> = ({condicionDeOperacion, setCondicionDeOperacion}) => {
-  const items: Item[] = [
-    { name: 'A contado', value: 1 },
-    { name: 'Credito', value: 2 },
-    { name: 'Otro', value: 3 },
-  ];
-
-  useEffect(()=>{
-    
-  })
-
+export const SelectCondicionOperacion: React.FC<
+  SelectCondicionOperacionProps
+> = ({
+  selectedCondicionDeOperacion,
+  setSelectedCondicionDeOperacion,
+  condicionesOperacionList,
+}) => {
   const [formData, setFormData] = useState({
     otraOperacion: '',
   });
@@ -37,15 +33,16 @@ export const SelectCondicionOperacion:React.FC<SelectCondicionOperacionProps> = 
       </label>
       <div className="flex flex-col gap-8">
         <div className="flex gap-10">
-          {items.map((item) => (
-            <button
-              key={item.value}
-              className={`btn ${condicionDeOperacion === item.name ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
-              onClick={() => setCondicionDeOperacion(item.name)} //TODO: Enviar id en lugar del nombre
-            >
-              {item.name}
-            </button>
-          ))}
+          {condicionesOperacionList &&
+            condicionesOperacionList.map((item: any) => (
+              <button
+                key={item.id}
+                className={`${selectedCondicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
+                onClick={() => setSelectedCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
+              >
+                {item.descripcion}
+              </button>
+            ))}
         </div>
       </div>
     </div>

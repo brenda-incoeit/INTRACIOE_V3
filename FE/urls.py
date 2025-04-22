@@ -1,6 +1,4 @@
 from django.urls import path
-
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaListAPIView, FacturasListAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView, tipoGeneracionDocumentoListAPIView
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -14,82 +12,19 @@ from .views import (
     generar_factura_view,
     invalidacion_dte_view,
     obtener_numero_control_ajax,
-    obtener_receptor
+    obtener_receptor,
+    generar_documento_ajuste_view, 
+    obtener_listado_productos_view
 )
 
 
 #renombrar el archivo
 urlpatterns = [
-    # -------------------------------
-    # Endpoints API REST
-    # -------------------------------
-
-    # Autenticación vía API
-    path('api/auth/', AutenticacionAPIView.as_view(), name='api_auth'),
-
-    # Autenticación vía formulario web
-    path('api/autenticacion/', autenticacion, name='autenticacion'),
-
-    path('api/invalidar_dte/<int:factura_id>/', InvalidarDteUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar'),
-    path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
-    path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
-    path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
-
-    # URLS DE API ACTIVIDAD ECONOMICA 
-    path('api/actividad/', ActividadEconomicaListAPIView.as_view(), name='actividad_list_api'),
-
-    path('api/actividad/<int:pk>/', ActividadEconomicaDetailAPIView.as_view(), name='actividad_detail_api'),
-    path('api/actividad/crear/', ActividadEconomicaCreateAPIView.as_view(), name='actividad_create_api'),
-    path('api/actividad/actualizar/<int:pk>/', ActividadEconomicaUpdateAPIView.as_view(), name='actividad_update_api'),
-    path('api/actividad/eliminar/<int:pk>/', ActividadEconomicaDeleteAPIView.as_view(), name='actividad_delete_api'),
-    
-    #URLS API EMISOR
-    path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
-    path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
-    
-    #URLS TIPO DOCUMENTO
-    path('api/tipo-id-receptor/', TipoDocIDReceptorListAPIView.as_view(), name='tipo_doc_id_receptor_list_api'),
-    
-    #URLS AMBIENTE
-    path('api/ambientes/', AmbientesListAPIView.as_view(), name='ambientes_list_api'),
-    
-    #URLS TIPOS ESTABLECIMIENTO
-    path('api/tipo-establecimiento/', TiposEstablecimientosListAPIView.as_view(), name='establecimientos_list_api'),
-    
-    #URLS DEPARTAMENTOS
-    path('api/departamentos/', DepartamentosListAPIView.as_view(), name='departamentos_list_api'),
-    
-    #URLS MUNICIPIOS SEGUN DEPARTAMENTO
-    path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'), 
-    
-    #URLS RECEPTOR
-    path('api/receptor/', recptorListAPIView.as_view(), name='receptor_list_api'),        
-    
-    #URL PRODUCTOS
-    path('api/productos/', productosListAPIView.as_view(), name='tipo_dte_api'),   
-    
-    #URL FACTURAS
-    path('api/facturas/', FacturasListAPIView.as_view(), name='factura_dte_api'),   
-    
-    #URL TIPO DE GENERACION DE FACTURAS
-    path('api/tipo-generacion-facturas/', tipoGeneracionDocumentoListAPIView.as_view(), name='generacion_dte_api'),   
-    
-    #---------- URLS CONFIGURACION DE FACTURA ----------#
-    #TIPO DE DOCUMENTO FACTURA
-    path('api/tipo-dte/', TipoDTEListAPIView.as_view(), name='tipo_dte_list_api'),    
-    
-    #CONDICION DE OPERACION
-    path('api/condicion-operacion/', CondicionDeOperacionListAPIView.as_view(), name='condicion_operacion_list_api'),
-    
-    #MODELO DE FACTURACION
-    path('api/modelo-facturacion/', ModeloDeFacturacionListAPIView.as_view(), name='modelo_facturacion_list_api'),
-    
-    ################################################################################################################################################
-    ################################################################################################################################################
-
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
-
+    
+    # URLS DTE AJUSTE
+    path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),
 
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),
@@ -129,4 +64,18 @@ urlpatterns = [
     path('emisor/new/', EmisorCreateView.as_view(), name='emisor_create'),
     path('emisor/<int:pk>/edit/', EmisorUpdateView.as_view(), name='emisor_update'),
     path('emisor/<int:pk>/delete/', EmisorDeleteView.as_view(), name='emisor_delete'),
+    
+    #LISTADO DE PRODUCTOS
+    path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
+    
+    #Contingencia
+    path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
+    path('contingencia-dte/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
+    path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
+    path('finalizar-contingencias/', views.finalizar_contigencia_view, name='finalizar_contigencia'),
+    
+    #Lotes
+    path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
+    path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
+    path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
 ]
