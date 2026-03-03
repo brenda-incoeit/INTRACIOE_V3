@@ -1,9 +1,43 @@
 from django.conf import settings
 from django.db import models
 import uuid
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    ROLE_CHOICES = (
+        ('admin', 'Administrador'),
+        ('vendedor', 'Vendedor'),
+        ('supervisor', 'Supervisor'),
+        ('cliente', 'Cliente'),
+        ('mesero', 'Mesero'),
+        ('cocinero', 'Cocinero'),
+        ('cajero', 'Cajero')
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
+    
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+    @property
+    def is_vendedor(self):
+        return self.role == 'vendedor'
+    @property
+    def is_supervisor(self):
+        return self.role == 'supervisor'
+    @property
+    def is_mesero_role(self):
+        return self.role == 'mesero'
+    @property
+    def is_cocinero_role(self):
+        return self.role == 'cocinero'
+    @property
+    def is_cajero_role(self):
+        return self.role == 'cajero'
+    
 
 class PasswordResetCode(models.Model):
-    #NEW
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -28,6 +62,26 @@ class ConfiguracionServidor(models.Model):
     def __str__(self):
         return f"{self.clave}"
     
+class UsuarioEmisor(models.Model):
+    """
+    Relación entre usuarios y emisores. Permite varios emisores por usuario,
+    marcar uno como predeterminado, y activar/desactivar la relación.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="emisores_rel")
+    emisor = models.ForeignKey("FE.Emisor_fe", on_delete=models.CASCADE, related_name="usuarios_rel")
+    activo = models.BooleanField(default=True)
+    es_predeterminado = models.BooleanField(default=False)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "emisor")
+        verbose_name = "Vínculo Usuario–Emisor"
+        verbose_name_plural = "Vínculos Usuario–Emisor"
+
+    def __str__(self):
+        return f"{self.user} → {self.emisor} ({'pred.' if self.es_predeterminado else 'sec.'})"
+    
+# Tu modelo Perfilusuario ya existe; solo añadimos el emisor activo:
 class Perfilusuario(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100, null=True, blank=True)
@@ -37,5 +91,43 @@ class Perfilusuario(models.Model):
     fecha_nacimiento = models.DateField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    # NUEVO: emisor activo
+    emisor_activo = models.ForeignKey(
+        "FE.Emisor_fe", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="usuarios_activos"
+    )
+
     def __str__(self):
-        return f"{self.user.email} – {self.nombre} {self.apellido}"
+        return f"{self.user.email} – {self.nombre or ''} {self.apellido or ''}".strip()
+
+
+class EmailProfile(models.Model):
+    SCOPE_CHOICES = (
+        ('general', 'General'),
+        ('fe', 'Facturación Electrónica'),
+    )
+    nombre       = models.CharField(max_length=100, unique=True)
+    scope        = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='general', db_index=True)
+    host         = models.CharField(max_length=200)
+    port         = models.PositiveIntegerField(default=465)
+    use_ssl      = models.BooleanField(default=True)
+    use_tls      = models.BooleanField(default=False)
+    username     = models.CharField(max_length=200)
+    password     = models.CharField(max_length=255)
+    from_email   = models.EmailField(help_text="Remitente por defecto (FROM)")
+    is_active    = models.BooleanField(default=True)
+    notes        = models.TextField(blank=True, default="")
+    updated_at   = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Perfil de correo"
+        verbose_name_plural = "Perfiles de correo"
+
+    def __str__(self):
+        return f"{self.nombre} [{self.scope}]{' *' if self.is_active else ''}"
+
+# Crear automáticamente el perfil al crear el usuario
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def crear_perfil_usuario(sender, instance, created, **kwargs):
+    if created:
+        Perfilusuario.objects.create(user=instance)

@@ -122,6 +122,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -139,9 +140,13 @@ INSTALLED_APPS = [
     'INVENTARIO.apps.InventarioConfig',
     'corsheaders',
     'AUTENTICACION',
+    "channels",
+    'RESTAURANTE',
 ]
+AUTH_USER_MODEL = "AUTENTICACION.User"
 
 MIDDLEWARE = [
+    "middleware.setup_check.SetupRedirectMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -165,6 +170,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'CONTABILIDAD/templates'),
             os.path.join(BASE_DIR, 'INFORMATICA/templates'),
             os.path.join(BASE_DIR, 'INVENTARIO/templates'),
+            os.path.join(BASE_DIR, 'AUTENTICACION/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -173,6 +179,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "FE.context_processors.emisor_context",
             ],
         },
     },
@@ -193,14 +200,14 @@ DATABASES = {
 # configuration specifies settings for a SQLite database in this case. SQLite is a lightweight,
 # serverless, self-contained database engine that is often used for development and testing purposes
 # in Django projects.
-    'default111': {
+    'default1': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db1.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     },
 
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'intracoe',
+        'NAME': 'intracoe_prod',
         'USER': 'intracoe',
         'PASSWORD': 'intracoe',
         'HOST': '192.168.2.49',  # Dirección IP del servidor PostgreSQL
@@ -222,9 +229,18 @@ DATABASES = {
     }
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', 
+    'intracoe.backends_login.MultiRoleBackend',
+]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+# settings.py
+
+# ... debajo de AUTH_PASSWORD_VALIDATORS ...
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -240,6 +256,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 
 # Internationalization
@@ -265,8 +282,16 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 #URL LOCAL PARA GUARDAR ARCHIVOS
 
 URL_ARCHIVOS_CORREO = "/factura_pdf"
+
+
+
+ASGI_APPLICATION = "intracoe.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+}
